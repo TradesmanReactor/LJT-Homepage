@@ -1,36 +1,27 @@
-name: Pages diagnostics
+name: Lock Closed Issues and Pull Requests
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
-  pages: write
+  issues: write
+  pull-requests: write
 
 jobs:
-  diagnose:
+  lock-threads:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect and initialize Pages
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -u
-          echo "GET before creation"
-          curl -sS -i \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" | sed -n '1,30p'
-          echo "POST creation"
-          curl -sS -i -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" \
-            -d '{"build_type":"workflow"}' | sed -n '1,40p'
-          echo "GET after creation"
-          curl -sS -i \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" | sed -n '1,40p'
+      - name: Lock Threads
+        uses: dessant/lock-threads@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          process-only: issues,prs
+
+          # Configuration for issues
+          issue-inactive-days: '30'
+          issue-comment: 'This thread has been automatically locked since there has not been any recent activity after it was closed.'
+
+          # Configuration for pull requests
+          pr-inactive-days: '15'
