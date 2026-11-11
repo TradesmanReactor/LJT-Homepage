@@ -1,56 +1,34 @@
-# Leaflet cluster map of talk locations
-#
-# Run this from the _talks/ directory, which contains .md files of all your
-# talks. This scrapes the location YAML field from each .md file, geolocates it
-# with geopy/Nominatim, and uses the getorg library to output data, HTML, and
-# Javascript for a standalone cluster map. This is functionally the same as the
-# #talkmap Jupyter notebook.
-import frontmatter
-import glob
-import getorg
-from geopy import Nominatim
-from geopy.exc import GeocoderTimedOut
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Set the default timeout, in seconds
-TIMEOUT = 5
+rm -rf files talkmap markdown_generator scripts _data/comments
+rm -f talkmap.ipynb talkmap_out.ipynb
+rm -f images/bio-photo.jpg images/bio-photo-2.jpg images/editing-talk.png images/profile.png
+rm -rf images/themes images/wiki
 
-# Collect the Markdown files
-g = glob.glob("_talks/*.md")
+npm install -g uglify-js
+uglifyjs assets/js/plugins/jquery.greedy-navigation.js assets/js/_main.js assets/js/theme.js -c -m -o assets/js/main.min.js
+bundle exec jekyll build --baseurl "/LJT-Homepage"
 
-# Prepare to geolocate
-geocoder = Nominatim(user_agent="academicpages.github.io")
-location_dict = {}
-location = ""
-permalink = ""
-title = ""
-
-# Perform geolocation
-for file in g:
-    # Read the file
-    data = frontmatter.load(file)
-    data = data.to_dict()
-
-    # Press on if the location is not present
-    if 'location' not in data:
-        continue
-
-    # Prepare the description
-    title = data['title'].strip()
-    venue = data['venue'].strip()
-    location = data['location'].strip()
-    description = f"{title}<br />{venue}; {location}"
-
-    # Geocode the location and report the status
-    try:
-        location_dict[description] = geocoder.geocode(location, timeout=TIMEOUT)
-        print(description, location_dict[description])
-    except ValueError as ex:
-        print(f"Error: geocode failed on input {location} with message {ex}")
-    except GeocoderTimedOut as ex:
-        print(f"Error: geocode timed out on input {location} with message {ex}")
-    except Exception as ex:
-        print(f"An unhandled exception occurred while processing input {location} with message {ex}")
-
-# Save the map
-m = getorg.orgmap.create_map_obj()
-getorg.orgmap.output_html_cluster_map(location_dict, folder_name="talkmap", hashed_usernames=False)
+test -s _site/index.html
+test -s _site/publications/index.html
+test -s _site/publications/synlogic/index.html
+grep -qF "Junteng Liu" _site/index.html
+grep -qF "Professor Junxian He" _site/index.html
+grep -qF "MINIMAX" _site/index.html
+grep -qF "Shanghai AI Lab" _site/index.html
+grep -qF "SynLogic" _site/index.html
+grep -qF "Perception Bottleneck" _site/index.html
+grep -qF "Universal Truthfulness Hyperplane" _site/index.html
+grep -qF "In-Context Sharpness" _site/index.html
+grep -qF "C-Eval" _site/index.html
+grep -qF "Composing Parameter-Efficient" _site/index.html
+grep -qF "Zhiyuan Honor Scholarship" _site/index.html
+grep -qF "jliugi@connect.ust.hk" _site/index.html
+grep -qF "Vicent0205" _site/index.html
+grep -qF "tbK9jl4AAAAJ" _site/index.html
+grep -qF "junteng88716710" _site/index.html
+grep -qF "SynLogic" _site/publications/index.html
+grep -qF "Composing Parameter-Efficient Modules with Arithmetic Operations" _site/publications/index.html
+test ! -e _site/talkmap
+test ! -e _site/files
